@@ -14,6 +14,15 @@ describe('dynamic-page loading in the plugin API', () => {
     expect(figma.createRectangle().parent?.id).toBe(page.id)
   })
 
+  test('setCurrentPageAsync switches only to a page', async () => {
+    const figma = new FigmaAPI(new SceneGraph())
+    const page = figma.currentPage
+    await expect(figma.setCurrentPageAsync(figma.createFrame())).rejects.toThrow(
+      'setCurrentPageAsync() can only switch to pages'
+    )
+    expect(figma.currentPage.id).toBe(page.id)
+  })
+
   test('loading a page resolves and leaves its layers readable', async () => {
     const figma = new FigmaAPI(new SceneGraph())
     const rectangle = figma.createRectangle()
