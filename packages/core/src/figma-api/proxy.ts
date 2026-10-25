@@ -183,6 +183,8 @@ export class FigmaNodeProxy {
   declare authorVisible: boolean | undefined
   declare isWideWidth: boolean | undefined
   declare shapeType: ShapeWithTextType | undefined
+  /** On pages alone, as in Figma. */
+  declare loadAsync: () => Promise<void>
   declare resetOverrides: () => void
 
   declare strokeWeight: number
@@ -276,6 +278,10 @@ export class FigmaNodeProxy {
     const internals = { id: INTERNAL_ID, graph: INTERNAL_GRAPH, api: INTERNAL_API }
     if (type === 'VECTOR') installVectorNodeProxyAccessors(this, internals, MIXED)
     if (type) installShapeNodeProxyAccessors(this, internals, type)
+    // Figma loads a page's layers on demand in dynamic-page mode and has `loadAsync` on pages
+    // alone; every page here is already loaded.
+    if (type === 'CANVAS')
+      Object.defineProperty(this, 'loadAsync', { value: () => Promise.resolve() })
   }
 
   private _update(changes: Partial<SceneNode>): void {
@@ -346,11 +352,6 @@ export class FigmaNodeProxy {
   /** The async form Figma requires in dynamic-page mode; same result as mainComponent. */
   async getMainComponentAsync(): Promise<FigmaNodeProxy | null> {
     return this.mainComponent
-  }
-
-  /** Figma loads a page's layers on demand in dynamic-page mode; every page here is loaded. */
-  async loadAsync(): Promise<void> {
-    if (this._raw().type !== 'CANVAS') throw new Error('loadAsync() can only be called on pages')
   }
 
   get mainComponent(): FigmaNodeProxy | null {

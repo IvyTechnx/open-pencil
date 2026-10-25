@@ -174,13 +174,20 @@ export class FigmaAPI implements NodeProxyHost {
     return this.getNodeById(id)
   }
 
-  /** The page switch Figma requires in dynamic-page mode; sets currentPage, and only to a page. */
+  /**
+   * The page switch Figma requires in dynamic-page mode, which sets `currentPage`. As in Figma, a
+   * missing node throws at once and a node that is no page rejects.
+   */
   setCurrentPageAsync(page: FigmaNodeProxy): Promise<void>
   setCurrentPageAsync(page: PageNode): Promise<void>
-  async setCurrentPageAsync(page: PageNode | FigmaNodeProxy): Promise<void> {
-    if (this._rawNode(page).type !== 'CANVAS')
-      throw new Error('setCurrentPageAsync() can only switch to pages')
+  // Scripts are not type-checked, so the call checks for a missing node as Figma does.
+  setCurrentPageAsync(page: PageNode | FigmaNodeProxy | null | undefined): Promise<void> {
+    if (page == null) throw new Error(`in setCurrentPageAsync: Expected node, got ${String(page)}`)
+    if (this._rawNode(page).type !== 'CANVAS') {
+      return Promise.reject(new Error('figma.setCurrentPageAsync expects a PageNode'))
+    }
     this._currentPageId = this._nodeId(page)
+    return Promise.resolve()
   }
 
   // --- Node Creation ---
